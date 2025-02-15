@@ -1,0 +1,31 @@
+name: Process Control Tests
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  buildtest:
+    name: BuildTest
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Download student solutions
+        uses: actions/checkout@v4
+
+      - name: Install required packages
+        run: sudo apt-get update && sudo apt-get install -y cpulimit at
+
+      - name: Run task 1
+        run: sudo bash 1_datetime.bash
+
+      # - name: Run task 2
+      #   run: sudo bash 2_repeat_datetime.bash
+
+      - name: Run task 3
+        run: sudo bash 3_total_repeat_datetime.bash
+
+      - name: Run task 4
+        run: sudo bash 4_limitations.bash

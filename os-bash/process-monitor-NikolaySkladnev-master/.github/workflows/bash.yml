@@ -1,0 +1,39 @@
+name: Process Monitor Tests
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  buildtest:
+    name: BuildTest
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Download student solutions
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Run task 1
+        run: ./1_users_processes.bash
+
+      - name: Run task 2
+        run: ./2_from_sbin.bash
+
+      - name: Run task 3
+        run: ./3_pid_of_last.bash
+
+      - name: Run task 4
+        run: ./4_cpu_burst.bash
+
+      - name: Run task 5
+        run: ./5_avg_run_child_or_parent.bash
+
+      - name: Run task 6
+        run: ./6_the_fattest_one.bash
+
+      - name: Run task 7
+        run: ./7_io.bash
