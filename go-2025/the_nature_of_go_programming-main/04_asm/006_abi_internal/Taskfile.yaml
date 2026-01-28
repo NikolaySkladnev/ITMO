@@ -1,0 +1,6 @@
+version: '3'
+
+tasks:
+  compile:
+    cmds:
+      - go build -gcflags='-N -l -S -S' main.go
