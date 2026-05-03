@@ -1,0 +1,129 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: link-tracker-postgres
+    environment:
+      POSTGRES_DB: link_tracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d link_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka-1:
+    image: bitnami/kafka:3.7.0
+    container_name: link-tracker-kafka-1
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,EXTERNAL://localhost:29092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: false
+      ALLOW_PLAINTEXT_LISTENER: yes
+
+  kafka-2:
+    image: bitnami/kafka:3.7.0
+    container_name: link-tracker-kafka-2
+    ports:
+      - "29093:29093"
+    environment:
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+      KAFKA_CFG_NODE_ID: 2
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:29093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: false
+      ALLOW_PLAINTEXT_LISTENER: yes
+
+  kafka-3:
+    image: bitnami/kafka:3.7.0
+    container_name: link-tracker-kafka-3
+    ports:
+      - "29094:29094"
+    environment:
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+      KAFKA_CFG_NODE_ID: 3
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,EXTERNAL://localhost:29094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: false
+      ALLOW_PLAINTEXT_LISTENER: yes
+
+  kafka-init:
+    image: bitnami/kafka:3.7.0
+    container_name: link-tracker-kafka-init
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    entrypoint: ["/bin/bash", "-ec"]
+    command: |
+      until kafka-topics.sh --bootstrap-server kafka-1:9092 --list; do
+        echo "Waiting for Kafka..."
+        sleep 2
+      done
+
+      kafka-topics.sh \
+        --bootstrap-server kafka-1:9092 \
+        --create \
+        --if-not-exists \
+        --topic link-updates \
+        --partitions 3 \
+        --replication-factor 3 \
+        --config min.insync.replicas=2
+
+      kafka-topics.sh \
+        --bootstrap-server kafka-1:9092 \
+        --create \
+        --if-not-exists \
+        --topic link-updates-dlq \
+        --partitions 3 \
+        --replication-factor 3 \
+        --config min.insync.replicas=2
+
+      kafka-topics.sh --bootstrap-server kafka-1:9092 --describe --topic link-updates
+      kafka-topics.sh --bootstrap-server kafka-1:9092 --describe --topic link-updates-dlq
+
+volumes:
+  postgres_data:

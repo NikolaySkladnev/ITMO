@@ -1,0 +1,57 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bot
+  config:
+    import: "optional:file:./.env[.properties]"
+  grpc:
+    server:
+      port: ${BOT_GRPC_PORT:9092}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:link-tracker-bot}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 2147483647
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    listener:
+      ack-mode: record
+
+app:
+  telegram:
+    url: https://api.telegram.org/bot
+    token: ${TELEGRAM_TOKEN}
+    update-listener-sleep: 1s
+    debug: false
+
+  bot:
+    grpc:
+      server-port: ${BOT_GRPC_PORT:9092}
+
+  scrapper:
+    transport: ${SCRAPPER_TRANSPORT:rest}
+    grpc:
+      host: ${SCRAPPER_GRPC_HOST:localhost}
+      port: ${SCRAPPER_GRPC_PORT:9093}
+    rest:
+      base-url: ${SCRAPPER_REST_BASE_URL:http://localhost:8081}
+
+  kafka:
+    enabled: true
+    topics:
+      updates: ${KAFKA_UPDATES_TOPIC:link-updates}
+      dlq: ${KAFKA_UPDATES_DLQ_TOPIC:link-updates-dlq}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:link-tracker-bot}
+      max-attempts: ${KAFKA_CONSUMER_MAX_ATTEMPTS:3}

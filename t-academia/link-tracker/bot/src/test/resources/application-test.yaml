@@ -1,0 +1,65 @@
+spring:
+  grpc:
+    server:
+      enabled: false
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.liquibase.autoconfigure.LiquibaseAutoConfiguration
+
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      missing-topics-fatal: false
+
+app:
+  kafka:
+    enabled: false
+    consumer:
+      max-attempts: 2
+    topics:
+      link-updates: link-updates
+      dead-letter-queue: link-updates-dlq
+
+  telegram:
+    url: http://localhost/bot
+    token: test-token
+    debug: false
+
+  scrapper:
+    transport: rest
+    rest:
+      base-url: http://localhost:65535
+    grpc:
+      host: localhost
+      port: 65535
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  tracing:
+    export:
+      enabled: false
+      otlp:
+        enabled: false
+
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+  defaults:
+    metrics:
+      export:
+        enabled: false

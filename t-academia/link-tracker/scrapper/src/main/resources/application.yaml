@@ -1,0 +1,62 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: scrapper
+  config:
+    import: "optional:file:./.env[.properties]"
+  grpc:
+    server:
+      port: ${SCRAPPER_GRPC_PORT:9093}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/link_tracker
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  liquibase:
+    enabled: true
+    change-log: classpath:migrations/master.xml
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 2147483647
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+
+app:
+  grpc:
+    server-port: ${SCRAPPER_GRPC_PORT:9093}
+    bot-host: ${BOT_GRPC_HOST:localhost}
+    bot-port: ${BOT_GRPC_PORT:9092}
+
+  database:
+    access-type: sql
+
+  bot:
+    transport: ${BOT_TRANSPORT:kafka}
+    rest:
+      base-url: ${BOT_REST_BASE_URL:http://localhost:8080}
+
+  stackoverflow:
+    key: ${STACKOVERFLOW_KEY}
+    access-token: ${STACKOVERFLOW_ACCESS_KEY}
+
+  github:
+    token: ${GITHUB_TOKEN}
+
+  scheduler:
+    interval: 60000
+    batch-size: 100
+    parallelism: 4
+
+  kafka:
+    topics:
+      updates: ${KAFKA_UPDATES_TOPIC:link-updates}

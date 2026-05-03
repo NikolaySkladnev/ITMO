@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package proto;
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+service BotService {
+    rpc SendUpdates(LinkUpdate) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/updates"
+            body: "*"
+        };
+    }
+}
+
+message LinkUpdate {
+    int64 id = 1;
+    string url = 2;
+    string description = 3;
+    repeated int64 tg_chat_ids = 4;
+}
